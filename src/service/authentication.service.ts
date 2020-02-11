@@ -1,39 +1,32 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs';
-import { ILogin } from './login';
+import { Router } from '@angular/router';
+
 @Injectable({
     providedIn: 'root'
 })
 export class AuthenticationService {
-
+    public errors: string = '';
     private loginURL = 'api/login.json';
     
-    constructor(private http: HttpClient) {
+    constructor(private http: HttpClient,
+        private router: Router) {
 
     }
 
     login(username: string, password: string) { 
-        debugger;
-        return this.http.get(this.loginURL)
-        .pipe(
-            map (
-                data => {
-                    console.log(JSON.stringify(data), 'return api result')
-                    debugger;
-                }),
-            catchError(this.handError)
-        );
+        return this.http.get<any>(this.loginURL)
+        .subscribe((data) => {debugger;
+            if (data.username === username && data.password === password) { 
+                localStorage.setItem('user', JSON.stringify(data));
+                this.router.navigate(['/home'])
+            } else {
+                if(!localStorage.getItem('user')) {
+                    localStorage.removeItem('user')
+                }
+                this.router.navigate(['/login'])
+            }
+        });
     }
-    private handError(err: HttpErrorResponse) {
-        let errorMessage = '';
-        if (err.error instanceof ErrorEvent) {
-            errorMessage = `An error occure: ${ err.error.message }`;
-        } else {
-            errorMessage = `Server returned code ${err.status}, and the error message is ${err.message }`;
-        }
-        return throwError(errorMessage);
-    }
-
 }
